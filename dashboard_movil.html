@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Empates · Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg:       #0a0c10;
+    --panel:    #111520;
+    --panel2:   #161b27;
+    --border:   #1e2535;
+    --cyan:     #00d4ff;
+    --green:    #3dffa0;
+    --red:      #ff4d6d;
+    --yellow:   #ffd166;
+    --orange:   #ff9f43;
+    --purple:   #a855f7;
+    --text:     #e2e8f0;
+    --text2:    #64748b;
+    --verde:    #3dffa0;
+    --amarillo: #ffd166;
+    --naranja:  #ff9f43;
+    --rojo:     #ff4d6d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background grid ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .wrap { position: relative; z-index: 1; padding: 0 0 40px; max-width: 480px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #0d1424 0%, #111a2e 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 20px 16px;
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(20px);
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+  .logo-sub  { font-size: 11px; color: var(--text2); font-family: 'JetBrains Mono', monospace; }
+
+  .status-dot {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--text2); font-family: 'JetBrains Mono', monospace;
+  }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .last-update {
+    margin-top: 10px;
+    font-size: 11px; color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* ── KPI grid ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 16px 14px 0;
+  }
+  .kpi-full { grid-column: 1 / -1; }
+
+  .kpi {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+  }
+  .kpi:active { transform: scale(0.97); }
+  .kpi::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent, var(--cyan));
+    opacity: 0.7;
+  }
+  .kpi-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--text2);
+    margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px; font-weight: 700;
+    color: var(--accent, var(--cyan));
+    line-height: 1;
+  }
+  .kpi-value.big { font-size: 32px; }
+  .kpi-sub {
+    font-size: 11px; color: var(--text2);
+    margin-top: 4px; font-family: 'JetBrains Mono', monospace;
+  }
+  .kpi-icon {
+    position: absolute; right: 14px; top: 14px;
+    font-size: 22px; opacity: 0.15;
+  }
+
+  /* ── Section ── */
+  .section { padding: 20px 14px 0; }
+  .section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text2);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Apuesta card ── */
+  .apuesta {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+  }
+  .apuesta:active { transform: scale(0.98); }
+  .apuesta-border {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+
+  .ap-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .ap-partido { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; flex: 1; padding-right: 10px; }
+  .ap-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 20px;
+    text-transform: uppercase; white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .ap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .ap-stat-label { font-size: 9px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 2px; }
+  .ap-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text); }
+  .ap-stat-value.highlight { color: var(--cyan); }
+
+  .ap-footer { display: flex; justify-content: space-between; align-items: center; }
+  .ap-liga { font-size: 10px; color: var(--text2); font-family: 'JetBrains Mono', monospace; }
+  .ap-fecha { font-size: 10px; color: var(--text2); font-family: 'JetBrains Mono', monospace; }
+
+  .ap-delta {
+    font-size: 10px; font-family: 'JetBrains Mono', monospace;
+    padding: 2px 7px; border-radius: 10px; font-weight: 600;
+  }
+  .delta-pos { background: rgba(61,255,160,0.1); color: var(--green); }
+  .delta-neg { background: rgba(255,77,109,0.1); color: var(--red); }
+  .delta-warn{ background: rgba(255,159,67,0.1); color: var(--orange); }
+
+  /* ── Historial ── */
+  .hist-item {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .hist-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .hist-info { flex: 1; min-width: 0; }
+  .hist-partido { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hist-sub { font-size: 10px; color: var(--text2); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+  .hist-ben {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+
+  /* ── Racha ── */
+  .racha-bar {
+    display: flex; gap: 5px; flex-wrap: wrap;
+    padding: 14px 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .racha-dot {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+  }
+
+  /* ── Picks ── */
+  .pick-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 13px 16px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .pick-modo {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; flex-shrink: 0;
+    letter-spacing: 0.5px;
+  }
+  .pick-info { flex: 1; min-width: 0; }
+  .pick-partido { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pick-sub { font-size: 10px; color: var(--text2); font-family: 'JetBrains Mono', monospace; margin-top: 3px; }
+  .pick-cuota {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px; font-weight: 700;
+    color: var(--cyan); flex-shrink: 0;
+  }
+
+  /* ── Empty state ── */
+  .empty {
+    text-align: center; padding: 30px 20px;
+    color: var(--text2); font-size: 13px;
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+  /* ── Refresh button ── */
+  .refresh-btn {
+    position: fixed; bottom: 24px; right: 20px;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 20px rgba(0,212,255,0.35);
+    transition: transform 0.2s;
+    z-index: 200;
+  }
+  .refresh-btn:active { transform: scale(0.9) rotate(180deg); }
+
+  /* ── Modo colors ── */
+  .verde   { --modo-bg: rgba(61,255,160,0.15); --modo-fg: #3dffa0; }
+  .amarillo{ --modo-bg: rgba(255,209,102,0.15); --modo-fg: #ffd166; }
+  .naranja { --modo-bg: rgba(255,159,67,0.15);  --modo-fg: #ff9f43; }
+  .rojo    { --modo-bg: rgba(255,77,109,0.15);  --modo-fg: #ff4d6d; }
+
+  .scrollable { overflow-x: auto; }
+
+  /* ── Bankroll color ── */
+  .pos { color: var(--green) !important; }
+  .neg { color: var(--red)   !important; }
+
+
+
+  /* ── Score area mejorada ── */
+  .score-area {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .score-placeholder {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .score-clock { font-size: 14px; opacity: 0.5; }
+  .score-waiting { opacity: 0.5; }
+
+  /* Score en vivo */
+  .score-live {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px;
+  }
+  .score-teams {
+    display: flex; align-items: center; gap: 10px; flex: 1;
+  }
+  .score-team {
+    font-size: 12px; font-weight: 700; color: var(--text);
+    flex: 1; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .score-marcador {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; flex-shrink: 0;
+  }
+  .score-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px; font-weight: 800;
+    width: 34px; text-align: center; line-height: 1;
+  }
+  .score-sep {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px; color: var(--text2); font-weight: 700;
+  }
+  .score-info {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
+    flex-shrink: 0;
+  }
+  .score-minuto {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-weight: 700; padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .minuto-live {
+    background: rgba(255,77,109,0.15); color: var(--red);
+    border: 1px solid rgba(255,77,109,0.3);
+    animation: pulse 1.5s infinite;
+  }
+  .minuto-ht {
+    background: rgba(255,209,102,0.15); color: var(--yellow);
+    border: 1px solid rgba(255,209,102,0.3);
+  }
+  .minuto-fin {
+    background: rgba(100,116,139,0.12); color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .score-resultado {
+    font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 10px; letter-spacing: 0.5px;
+  }
+  .res-empate  { background: rgba(0,212,255,0.12); color: var(--cyan); }
+  .res-gana    { background: rgba(61,255,160,0.12); color: var(--green); }
+  .res-pierde  { background: rgba(255,77,109,0.12); color: var(--red); }
+
+  /* Color de los números según resultado */
+  .num-verde   { color: var(--green); }
+  .num-rojo    { color: var(--red); }
+  .num-empate  { color: var(--cyan); }
+  .num-neutro  { color: var(--text); }
+
+  /* Apuesta con resultado visual destacado */
+  .apuesta.en-juego { border-color: rgba(255,77,109,0.3); }
+  .apuesta.empate-live { border-color: rgba(0,212,255,0.4); }
+  .apuesta.finalizada { opacity: 0.85; }
+
+  /* ── Live score badge ── */
+  .live-score {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,77,109,0.12); border: 1px solid rgba(255,77,109,0.3);
+    border-radius: 20px; padding: 3px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+    color: var(--red);
+  }
+  .live-score.finished {
+    background: rgba(100,116,139,0.12); border-color: rgba(100,116,139,0.3);
+    color: var(--text2);
+  }
+  .live-score.ganando {
+    background: rgba(61,255,160,0.12); border-color: rgba(61,255,160,0.3);
+    color: var(--green);
+  }
+  .live-score.perdiendo {
+    background: rgba(255,77,109,0.12); border-color: rgba(255,77,109,0.3);
+    color: var(--red);
+  }
+  .live-score.empate {
+    background: rgba(0,212,255,0.12); border-color: rgba(0,212,255,0.3);
+    color: var(--cyan);
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--red); animation: pulse 1s infinite;
+    flex-shrink: 0;
+  }
+  .live-dot.fin { background: var(--text2); animation: none; }
+
+  .ap-score-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .ap-teams {
+    font-size: 11px; color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ap-minute {
+    font-size: 10px; color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .api-config {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin: 16px 14px 0;
+  }
+  .api-config-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--text2);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .api-key-row {
+    display: flex; gap: 8px; margin-bottom: 8px;
+  }
+  .api-key-input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px;
+    color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    outline: none;
+  }
+  .api-key-input:focus { border-color: var(--cyan); }
+  .api-key-input::placeholder { color: var(--text2); }
+  .btn-small {
+    background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3);
+    border-radius: 8px; padding: 8px 14px;
+    color: var(--cyan); font-size: 12px; font-weight: 600; cursor: pointer;
+    white-space: nowrap; transition: background 0.2s;
+  }
+  .btn-small:active { background: rgba(0,212,255,0.2); }
+  .btn-danger {
+    background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3);
+    color: var(--red);
+  }
+  .api-status {
+    font-size: 11px; color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 4px; min-height: 16px;
+  }
+  .keys-list { margin-top: 8px; }
+  .key-item {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 12px; margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  }
+  .key-item.active { border-color: rgba(61,255,160,0.4); }
+  .key-item.exhausted { opacity: 0.5; }
+  .key-badge {
+    font-size: 9px; padding: 2px 7px; border-radius: 10px; font-weight: 700;
+  }
+  .badge-active   { background: rgba(61,255,160,0.15); color: var(--green); }
+  .badge-exhausted{ background: rgba(255,77,109,0.15); color: var(--red); }
+  .badge-standby  { background: rgba(100,116,139,0.15); color: var(--text2); }
+
+  /* Animations */
+  .kpi, .apuesta, .hist-item, .pick-card {
+    animation: fadeUp 0.4s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .kpi:nth-child(2) { animation-delay: 0.05s; }
+  .kpi:nth-child(3) { animation-delay: 0.10s; }
+  .kpi:nth-child(4) { animation-delay: 0.15s; }
+</style>
+<script>
+window.MARCADORES_PRECARGADOS = {};
+window.MARCADORES_TIMESTAMP = "";
+</script></head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">
+        <div class="logo-icon">⚽</div>
+        <div>
+          <div class="logo-text">Empates</div>
+          <div class="logo-sub">Dashboard · v7.0</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="status-dot">
+          <div class="dot"></div>
+          <span id="status-txt">cargando...</span>
+        </div>
+<button onclick="toggleConfig()" title="Cambiar API key"
+  style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
+  border-radius:8px;color:#e2e8f0;font-size:16px;cursor:pointer;
+  padding:4px 10px;line-height:1">&#9881;</button>
+      </div>
+    </div>
+    <div class="last-update">🕐 App: <span id="last-update">—</span> &nbsp;·&nbsp; ⚽ Marcadores: <span id="marcadores-update">—</span> &nbsp;·&nbsp; 📡 Llamadas hoy: <span id="call-counter" style="color:var(--green)">0/100</span></div>
+  </div>
+
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi kpi-full" style="--accent: var(--cyan)">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-label">Bankroll</div>
+      <div class="kpi-value big" id="bankroll">—</div>
+      <div class="kpi-sub" id="bankroll-sub">—</div>
+    </div>
+    <div class="kpi" style="--accent: var(--green)">
+      <div class="kpi-icon">📈</div>
+      <div class="kpi-label">Hit Rate</div>
+      <div class="kpi-value" id="hitrate">—</div>
+      <div class="kpi-sub" id="hitrate-sub">—</div>
+    </div>
+    <div class="kpi" style="--accent: var(--yellow)">
+      <div class="kpi-icon">⏳</div>
+      <div class="kpi-label">Pendientes</div>
+      <div class="kpi-value" id="pendientes">—</div>
+      <div class="kpi-sub" id="pendientes-sub">—</div>
+    </div>
+    <div class="kpi" style="--accent: var(--purple)">
+      <div class="kpi-icon">🔄</div>
+      <div class="kpi-label">Ciclos</div>
+      <div class="kpi-value" id="ciclos">—</div>
+      <div class="kpi-sub" id="ciclos-sub">—</div>
+    </div>
+    <div class="kpi" style="--accent: var(--orange)">
+      <div class="kpi-icon">🔥</div>
+      <div class="kpi-label">Racha</div>
+      <div class="kpi-value" id="racha" style="font-size:18px; padding-top:4px">—</div>
+      <div class="kpi-sub" id="racha-sub">últimas apuestas</div>
+    </div>
+  </div>
+
+  <!-- Racha visual -->
+  <div class="section">
+    <div class="section-title">Últimas apuestas</div>
+    <div class="racha-bar" id="racha-bar">
+      <div class="empty" style="padding:8px; width:100%">Sin datos</div>
+    </div>
+  </div>
+
+  <!-- Pendientes -->
+  <div class="section">
+    <div class="section-title">Apuestas abiertas</div>
+    <div id="pendientes-list">
+      <div class="empty"><div class="empty-icon">🎯</div>No hay apuestas pendientes</div>
+    </div>
+  </div>
+
+  <!-- Picks disponibles -->
+  <div class="section" id="picks-section" style="display:none">
+    <div class="section-title">Picks del día</div>
+    <div id="picks-list"></div>
+  </div>
+
+  <!-- Historial reciente -->
+  <div class="section">
+    <div class="section-title">Últimos resultados</div>
+    <div id="historial-list">
+      <div class="empty"><div class="empty-icon">📋</div>Sin resultados aún</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Refresh button -->
+<button class="refresh-btn" onclick="refrescarForzado()" title="Actualizar (consume 4 llamadas API)">🔄</button>
+
+<script>
+// ── Datos embebidos (generados automáticamente por la app) ────────
+const DATA_EMBEDDED = {"fecha_guardado": "2026-05-18 10:00:00", "manager": {"bankroll": -2.65, "ciclos": [{"ciclo_id": 1, "nivel": 1, "estado": "ABIERTO"}], "historial": [{"estado": "RESUELTA", "resultado": "GANADA", "partido": "Urawa Red Diamonds - FC Tokyo", "modo_filtro": "AMARILLO", "cuota_x": 3.25, "cuota_real_x": 3.25, "stake_eur": 1, "stake_real_eur": 1, "beneficio_eur": 2.25, "bankroll_eur": 0.25, "fecha_local": "2026-05-16", "hora_local": "09:00", "sport_key": "soccer_japan_j_league"}, {"estado": "PENDIENTE", "resultado": "", "partido": "Waterford FC - Drogheda United", "modo_filtro": "AMARILLO", "cuota_x": 3.3, "cuota_real_x": 3.5, "stake_eur": 2, "stake_real_eur": "2.0", "fecha_local": "2026-05-18", "hora_local": "20:45", "sport_key": "soccer_league_of_ireland"}]}, "df_picks": []};
+
+// ── Helpers ──────────────────────────────────────────────────────
+function modoClass(modo) {
+  return (modo || '').toLowerCase();
+}
+function modoColor(modo) {
+  const m = (modo||'').toUpperCase();
+  if (m === 'VERDE')    return '#3dffa0';
+  if (m === 'AMARILLO') return '#ffd166';
+  if (m === 'NARANJA')  return '#ff9f43';
+  return '#ff4d6d';
+}
+function modoBg(modo) {
+  const m = (modo||'').toUpperCase();
+  if (m === 'VERDE')    return 'rgba(61,255,160,0.15)';
+  if (m === 'AMARILLO') return 'rgba(255,209,102,0.15)';
+  if (m === 'NARANJA')  return 'rgba(255,159,67,0.15)';
+  return 'rgba(255,77,109,0.15)';
+}
+function signo(n) { return n >= 0 ? '+' : ''; }
+function fmt(n, dec=2) {
+  if (n === null || n === undefined || n === '') return '—';
+  return parseFloat(n).toFixed(dec);
+}
+
+// ── Render ────────────────────────────────────────────────────────
+function renderDatos(data) {
+  if (!data) {
+    document.getElementById('status-txt').textContent = 'sin datos';
+    return;
+  }
+
+  const mgr       = data.manager || {};
+  const historial = mgr.historial || [];
+  const ciclos    = mgr.ciclos    || [];
+  const picks     = data.df_picks || [];
+  const bankroll  = parseFloat(mgr.bankroll || 0);
+
+  const pendientes = historial.filter(h => h.estado === 'PENDIENTE');
+  const resueltas  = historial.filter(h => h.estado === 'RESUELTA');
+  const ganadas    = resueltas.filter(h => h.resultado === 'GANADA');
+  const perdidas   = resueltas.filter(h => h.resultado === 'PERDIDA');
+  const abiertos   = ciclos.filter(c => c.estado === 'ABIERTO');
+  const cerrados   = ciclos.filter(c => c.estado === 'CERRADO');
+  const hr         = resueltas.length ? (ganadas.length / resueltas.length * 100).toFixed(1) : '—';
+
+  // ── KPIs ──
+  const brEl = document.getElementById('bankroll');
+  brEl.textContent = signo(bankroll) + fmt(bankroll) + ' €';
+  brEl.className = 'kpi-value big ' + (bankroll >= 0 ? 'pos' : 'neg');
+  document.getElementById('bankroll-sub').textContent =
+    `${resueltas.length} apuestas resueltas`;
+
+  document.getElementById('hitrate').textContent = hr !== '—' ? hr + '%' : '—';
+  document.getElementById('hitrate-sub').textContent =
+    `${ganadas.length}G  ${perdidas.length}P`;
+
+  document.getElementById('pendientes').textContent = pendientes.length;
+  const stakePend = pendientes.reduce((s,h) => s + parseFloat(h.stake_real_eur || h.stake_eur || 0), 0);
+  document.getElementById('pendientes-sub').textContent =
+    stakePend > 0 ? `${fmt(stakePend,2)} € en juego` : 'ninguna';
+
+  document.getElementById('ciclos').textContent = abiertos.length;
+  document.getElementById('ciclos-sub').textContent =
+    `${cerrados.length} cerrados`;
+
+  // ── Racha ──
+  const ultimas = resueltas.slice(-10).reverse();
+  let rachaCount = 0;
+  let rachaRes   = ultimas[0]?.resultado || '';
+  for (const h of ultimas) {
+    if (h.resultado === rachaRes) rachaCount++;
+    else break;
+  }
+  const rachaEmoji = rachaRes === 'GANADA' ? '✅' : rachaRes === 'PERDIDA' ? '❌' : '—';
+  document.getElementById('racha').textContent =
+    rachaRes ? `${rachaEmoji} ${rachaCount}x ${rachaRes}` : '—';
+
+  // ── Racha bar visual ──
+  const barEl = document.getElementById('racha-bar');
+  if (ultimas.length === 0) {
+    barEl.innerHTML = '<div class="empty" style="padding:8px;width:100%">Sin datos</div>';
+  } else {
+    barEl.innerHTML = ultimas.map(h => {
+      const ok = h.resultado === 'GANADA';
+      const bg = ok ? 'rgba(61,255,160,0.15)' : 'rgba(255,77,109,0.15)';
+      const fg = ok ? '#3dffa0' : '#ff4d6d';
+      return `<div class="racha-dot" style="background:${bg};color:${fg}">${ok?'✓':'✗'}</div>`;
+    }).join('');
+  }
+
+  // ── Status ──
+  document.getElementById('status-txt').textContent = 'en directo';
+  document.getElementById('last-update').textContent = data.fecha_guardado || '—';
+
+  // ── Pendientes ──
+  const pendEl = document.getElementById('pendientes-list');
+  if (pendientes.length === 0) {
+    pendEl.innerHTML = '<div class="empty"><div class="empty-icon">🎯</div>No hay apuestas pendientes</div>';
+  } else {
+    pendEl.innerHTML = pendientes.map((h, i) => {
+      const modo   = h.modo_filtro || '?';
+      const mColor = modoColor(modo);
+      const mBg    = modoBg(modo);
+      const delta  = h.delta_cuota || h.cuota_real_x
+        ? (parseFloat(h.cuota_real_x||0) - parseFloat(h.cuota_x||0)).toFixed(3)
+        : null;
+      let deltaHtml = '';
+      if (delta !== null && parseFloat(h.cuota_real_x||0) > 0) {
+        const d = parseFloat(delta);
+        const cls = d >= 0 ? 'delta-pos' : (d < -0.15 ? 'delta-warn' : 'delta-neg');
+        deltaHtml = `<span class="ap-delta ${cls}">${d>=0?'+':''}${delta}</span>`;
+      }
+      const liga = (h.sport_key||'').replace('soccer_','').replace(/_/g,' ');
+      return `
+        <div class="apuesta" id="apuesta-${i}">
+          <div class="apuesta-border" style="background:${mColor}"></div>
+          <div class="ap-header">
+            <div class="ap-partido">${h.partido || '—'}</div>
+            <div class="ap-badge" style="background:${mBg};color:${mColor}">${modo}</div>
+          </div>
+          <div class="ap-grid">
+            <div>
+              <div class="ap-stat-label">Stake</div>
+              <div class="ap-stat-value">${fmt(h.stake_real_eur || h.stake_eur, 0)}€</div>
+            </div>
+            <div>
+              <div class="ap-stat-label">Cuota API</div>
+              <div class="ap-stat-value">${fmt(h.cuota_x, 2)}</div>
+            </div>
+            <div>
+              <div class="ap-stat-label">Cuota real</div>
+              <div class="ap-stat-value highlight">${parseFloat(h.cuota_real_x||0)>0 ? fmt(h.cuota_real_x,2) : '—'}</div>
+            </div>
+          </div>
+          <div class="ap-footer">
+            <div>
+              <div class="ap-liga">${liga}</div>
+              <div class="ap-fecha">${h.fecha_local||''} · ${h.hora_local||''}</div>
+            </div>
+            ${deltaHtml}
+          </div>
+          <div class="score-area" id="score-${i}">
+            <div class="score-placeholder">
+              <span class="score-clock">🕐</span>
+              <span class="score-waiting">Esperando inicio...</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Picks del día ──
+  const picksSection = document.getElementById('picks-section');
+  const picksList    = document.getElementById('picks-list');
+  const picksValidos = picks.filter(p => ['VERDE','AMARILLO','NARANJA'].includes(p.modo_filtro));
+  if (picksValidos.length > 0) {
+    picksSection.style.display = 'block';
+    picksList.innerHTML = picksValidos.slice(0, 8).map(p => {
+      const modo   = p.modo_filtro || '?';
+      const mColor = modoColor(modo);
+      const mBg    = modoBg(modo);
+      const liga   = (p.sport_key||'').replace('soccer_','').replace(/_/g,' ');
+      return `
+        <div class="pick-card">
+          <div class="pick-modo" style="background:${mBg};color:${mColor}">${modo.substring(0,3)}</div>
+          <div class="pick-info">
+            <div class="pick-partido">${p.partido||'—'}</div>
+            <div class="pick-sub">${liga} · ${p.fecha_local||''} ${p.hora_local||''}</div>
+          </div>
+          <div class="pick-cuota">${fmt(p.cuota_x,2)}</div>
+        </div>`;
+    }).join('');
+  } else {
+    picksSection.style.display = 'none';
+  }
+
+  // ── Historial reciente ──
+  const histEl = document.getElementById('historial-list');
+  const ultRes = resueltas.slice(-8).reverse();
+  if (ultRes.length === 0) {
+    histEl.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>Sin resultados aún</div>';
+  } else {
+    histEl.innerHTML = ultRes.map(h => {
+      const ok  = h.resultado === 'GANADA';
+      const ben = parseFloat(h.beneficio_eur || 0);
+      const icoBg  = ok ? 'rgba(61,255,160,0.12)' : 'rgba(255,77,109,0.12)';
+      const benClr = ben >= 0 ? 'var(--green)' : 'var(--red)';
+      return `
+        <div class="hist-item">
+          <div class="hist-icon" style="background:${icoBg}">${ok?'✅':'❌'}</div>
+          <div class="hist-info">
+            <div class="hist-partido">${h.partido||'—'}</div>
+            <div class="hist-sub">${h.fecha_local||''} · ${h.modo_filtro||''} · cuota ${fmt(h.cuota_real_x||h.cuota_x,2)}</div>
+          </div>
+          <div class="hist-ben" style="color:${benClr}">${signo(ben)}${fmt(ben)}€</div>
+        </div>`;
+    }).join('');
+  }
+}
+
+// ── Marcadores pre-cargados por el script Python ─────────────────
+// No necesita API key en el móvil — el PC hace las consultas
+
+const _AL = {
+  'lommel sk':'lommel united','lommel united':'lommel sk',
+  'vasteras sk fk':'vasteras sk','vasteras sk':'vasteras sk fk','vasteras':'vasteras sk',
+  'aik':'aik stockholm','aik stockholm':'aik',
+  'brommapojkarna':'if brommapojkarna','if brommapojkarna':'brommapojkarna',
+  'kalmar':'kalmar ff','kalmar ff':'kalmar',
+  'drogheda':'drogheda united','drogheda united':'drogheda',
+  'waterford':'waterford fc','waterford fc':'waterford',
+  'olympiakos piraeus':'olympiacos','olympiacos':'olympiakos piraeus',
+  'aek':'aek athens','aek athens':'aek',
+  'cremonese':'us cremonese','us cremonese':'cremonese',
+  'catanzaro':'us catanzaro 1929','us catanzaro 1929':'catanzaro','us catanzaro':'catanzaro',
+  'ceara':'ceara sc','ceara sc':'ceara',
+  'fortaleza':'fortaleza ec','fortaleza ec':'fortaleza',
+  'atletico mineiro':'athletic club mg','athletic club mg':'atletico mineiro',
+  'juventude':'esporte clube juventude','esporte clube juventude':'juventude',
+  'novorizontino':'gremio novorizontino','gremio novorizontino':'novorizontino',
+  'kawasaki frontale':'kawasaki','kawasaki':'kawasaki frontale',
+  'fc machida zelvia':'machida zelvia','machida zelvia':'fc machida zelvia',
+  'fc tokyo':'tokyo','tokyo':'fc tokyo',
+  'urawa red diamonds':'urawa','urawa':'urawa red diamonds',
+  'yokohama f marinos':'yokohama fm','yokohama fm':'yokohama f marinos',
+};
+
+function _norm(s) {
+  if (!s) return '';
+  var r = s.toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/(fc|ac|sc|sk|if|fk|us|as|rc|sv|eg)/g,' ').replace(/\s+/g,' ').trim();
+  return _AL[r] || r;
+}
+
+function similarity(a, b) {
+  var na = _norm(a), nb = _norm(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1.0;
+  if ((_AL[na]||na) === nb || (_AL[nb]||nb) === na) return 0.95;
+  if (na.includes(nb) || nb.includes(na)) return 0.90;
+  var wa = na.split(' ').filter(function(w){return w.length>2;}),
+      wb = nb.split(' ').filter(function(w){return w.length>2;});
+  if (!wa.length || !wb.length) return 0;
+  var m = wa.filter(function(w){return wb.some(function(v){return v===w||v.startsWith(w)||w.startsWith(v);});}).length;
+  return m / Math.max(wa.length, wb.length);
+}
+
+function buscarPartidoEnDict(partido, dict) {
+  if (!partido || !dict) return null;
+  var partes = partido.split(' - ');
+  if (partes.length < 2) return null;
+  var homeQ = partes[0].toLowerCase().trim();
+  var awayQ = partes[1].toLowerCase().trim();
+  var directKey = homeQ + '_' + awayQ;
+  if (dict[directKey]) return dict[directKey];
+  var best = null, bestScore = 0;
+  for (var key in dict) {
+    var fix = dict[key];
+    var simH = similarity(homeQ, fix.home);
+    var simA = similarity(awayQ, fix.away);
+    var score = (simH + simA) / 2;
+    if (score > bestScore && score > 0.38) { bestScore = score; best = fix; }
+  }
+  return best;
+}
+
+function getLiveData() {
+  return window.MARCADORES_PRECARGADOS || {};
+}
+
+function updateMarcadoresTs() {
+  const ts  = window.MARCADORES_TIMESTAMP || null;
+  const el  = document.getElementById('marcadores-update');
+  if (el) el.textContent = ts || 'Sin datos';
+}
+
+// ── Key móvil (guardada en el dispositivo) ───────────────────────
+var _KEY_STORAGE    = 'empates_mobile_api_key';
+var _CALLS_STORAGE  = 'empates_api_calls';
+var _CALLS_DATE     = 'empates_api_calls_date';
+var _CACHE_DATA     = 'empates_cache_data';
+var _CACHE_TIME     = 'empates_cache_time';
+var _CACHE_MINUTES  = 5;  // No rellamar si hace menos de 5 minutos
+
+function getCacheValido() {
+  var ts  = parseInt(localStorage.getItem(_CACHE_TIME) || '0');
+  var now = Date.now();
+  if (now - ts < _CACHE_MINUTES * 60 * 1000) {
+    try {
+      var cached = JSON.parse(localStorage.getItem(_CACHE_DATA) || '{}');
+      if (Object.keys(cached).length > 0) return cached;
+    } catch(e) {}
+  }
+  return null;
+}
+function guardarCache(dict) {
+  try {
+    localStorage.setItem(_CACHE_DATA, JSON.stringify(dict));
+    localStorage.setItem(_CACHE_TIME, String(Date.now()));
+  } catch(e) {}
+}
+function tiempoDesdeCache() {
+  var ts  = parseInt(localStorage.getItem(_CACHE_TIME) || '0');
+  if (!ts) return null;
+  var mins = Math.floor((Date.now() - ts) / 60000);
+  return mins;
+}
+
+function getMobileKey() { return localStorage.getItem(_KEY_STORAGE) || ''; }
+function setMobileKey(k) { localStorage.setItem(_KEY_STORAGE, k.trim()); }
+
+function getCalls() {
+  var today = new Date().toISOString().slice(0,10);
+  var saved = localStorage.getItem(_CALLS_DATE);
+  if (saved !== today) {
+    localStorage.setItem(_CALLS_DATE, today);
+    localStorage.setItem(_CALLS_STORAGE, '0');
+    return 0;
+  }
+  return parseInt(localStorage.getItem(_CALLS_STORAGE) || '0');
+}
+function addCalls(n) {
+  var c = getCalls() + n;
+  localStorage.setItem(_CALLS_STORAGE, String(c));
+  updateCallCounter();
+  return c;
+}
+function updateCallCounter() {
+  var c   = getCalls();
+  var el  = document.getElementById('call-counter');
+  if (!el) return;
+  el.textContent = c + '/100';
+  el.style.color = c >= 90 ? 'var(--red)' : c >= 70 ? 'var(--yellow)' : 'var(--green)';
+}
+
+function cargarDatos() {
+  updateCallCounter();
+  renderDatos(DATA_EMBEDDED);
+
+  // Si hay marcadores pre-cargados por el PC, usarlos directamente
+  var dict = getLiveData();
+  if (Object.keys(dict).length > 0) {
+    injectarMarcadores(DATA_EMBEDDED);
+    updateMarcadoresTs();
+    var nFix  = Object.keys(dict).length;
+    var nLive = Object.values(dict).filter(function(f){return f.live;}).length;
+    var nFin  = Object.values(dict).filter(function(f){return f.finished;}).length;
+    var stEl  = document.getElementById('status-txt');
+    if (stEl) stEl.textContent = nFix + ' partidos (' + nLive + ' en vivo - ' + nFin + ' fin)';
+    return;
+  }
+
+  // Sin marcadores del PC → llamar a la API directamente desde el móvil
+  var key = getMobileKey();
+  if (!key) {
+    var stEl = document.getElementById('status-txt');
+    if (stEl) stEl.textContent = 'sin key - pulsa ⚙️';
+    mostrarConfigKey();
+    return;
+  }
+  fetchMarcadores(key);
+}
+
+async function fetchMarcadores(key, forzar) {
+  var stEl = document.getElementById('status-txt');
+
+  // Usar cache si es reciente y no se fuerza
+  if (!forzar) {
+    var cached = getCacheValido();
+    if (cached) {
+      var mins = tiempoDesdeCache();
+      window.MARCADORES_PRECARGADOS = cached;
+      window.MARCADORES_TIMESTAMP   = 'cache (' + mins + ' min)';
+      injectarMarcadores(DATA_EMBEDDED);
+      updateMarcadoresTs();
+      var nFix = Object.keys(cached).length;
+      if (stEl) stEl.textContent = nFix + ' partidos (cache ' + mins + ' min - pulsa 🔄 para actualizar)';
+      updateCallCounter();
+      return;
+    }
+  }
+
+  if (stEl) stEl.textContent = 'cargando marcadores...';
+
+  // Aviso si quedan pocas llamadas
+  var llamadas = getCalls();
+  if (llamadas >= 90) {
+    if (!confirm('Solo te quedan ' + (100-llamadas) + ' llamadas hoy. ¿Continuar?')) return;
+  }
+
+  try {
+    var hoy  = new Date().toISOString().slice(0,10);
+    var ayer = new Date(Date.now()-86400000).toISOString().slice(0,10);
+    var man  = new Date(Date.now()+86400000).toISOString().slice(0,10);
+    var dict = {};
+
+    function parseFix(fix, esLive) {
+      var home   = (fix.teams.home.name || '').toLowerCase();
+      var away   = (fix.teams.away.name || '').toLowerCase();
+      var status = fix.fixture.status.short || '';
+      var finished = ['FT','AET','PEN'].includes(status);
+      var live     = esLive || ['1H','HT','2H','ET','BT','P'].includes(status);
+      if (home && away) {
+        var key2 = home + '_' + away;
+        if (!dict[key2] || live || finished) {
+          dict[key2] = {
+            home:home, away:away,
+            homeG: fix.goals.home, awayG: fix.goals.away,
+            minuto: fix.fixture.status.elapsed,
+            status:status, finished:finished, live:live,
+            fecha: (fix.fixture.date||'').slice(0,10),
+            hora:  (fix.fixture.date||'').slice(11,16),
+            league_id: (fix.league||{}).id,
+          };
+        }
+      }
+    }
+
+    function checkError(d) {
+      var errs = d.errors || {};
+      var msg = typeof errs === 'object' ? Object.values(errs).join(' ').toLowerCase() : String(errs).toLowerCase();
+      return msg.includes('suspended') || msg.includes('ratelimit') || msg.includes('too many');
+    }
+
+    // Live primero (mas prioritario)
+    addCalls(1);
+    var rL = await fetch('https://v3.football.api-sports.io/fixtures?live=all', {
+      headers: {'x-apisports-key': key, 'Accept': 'application/json'}
+    });
+    var dL = await rL.json();
+    if (checkError(dL)) { if (stEl) stEl.textContent = 'key suspendida o agotada - pulsa ⚙️'; return; }
+    for (var fix of (dL.response || [])) parseFix(fix, true);
+
+    // Hoy y manana en 2 llamadas separadas (el endpoint ?date= es mas fiable que ?from=/?to=)
+    for (var fecha of [ayer, hoy, man]) {
+      addCalls(1);
+      var r = await fetch('https://v3.football.api-sports.io/fixtures?date=' + fecha, {
+        headers: {'x-apisports-key': key, 'Accept': 'application/json'}
+      });
+      var d = await r.json();
+      if (checkError(d)) { if (stEl) stEl.textContent = 'key suspendida o agotada - pulsa ⚙️'; return; }
+      for (var fix of (d.response || [])) parseFix(fix, false);
+    }
+
+    guardarCache(dict);
+    window.MARCADORES_PRECARGADOS = dict;
+    window.MARCADORES_TIMESTAMP   = new Date().toLocaleTimeString();
+    injectarMarcadores(DATA_EMBEDDED);
+    updateMarcadoresTs();
+    var nFix  = Object.keys(dict).length;
+    var nLive = Object.values(dict).filter(function(f){return f.live;}).length;
+    var nFin  = Object.values(dict).filter(function(f){return f.finished;}).length;
+    if (stEl) stEl.textContent = nFix + ' partidos (' + nLive + ' en vivo - ' + nFin + ' fin)';
+  } catch(e) {
+    if (stEl) stEl.textContent = 'error: ' + e.message;
+  }
+}
+
+function mostrarConfigKey() {
+  var existing = document.getElementById('key-config-panel');
+  if (existing) return;
+  var panel = document.createElement('div');
+  panel.id = 'key-config-panel';
+  panel.style.cssText = 'background:#111520;border:1px solid #1e2535;border-radius:14px;padding:16px;margin:16px 14px 0;';
+  panel.innerHTML =
+    '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;margin-bottom:12px">🔑 API Key (solo primera vez)</div>' +
+    '<div style="display:flex;gap:8px">' +
+      '<input id="key-input" type="password" placeholder="Pega tu key de api-football.com..." ' +
+        'style="flex:1;background:#0a0c10;border:1px solid #1e2535;border-radius:8px;padding:8px 12px;color:#e2e8f0;font-family:monospace;font-size:12px;outline:none">' +
+      '<button onclick="guardarKey()" ' +
+        'style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:8px;padding:8px 14px;color:#00d4ff;font-size:12px;font-weight:600;cursor:pointer">' +
+        'Guardar' +
+      '</button>' +
+    '</div>' +
+    '<div style="font-size:10px;color:#64748b;margin-top:8px">Se guarda en el móvil. No hay que repetirla.</div>';
+  var wrap = document.querySelector('.wrap');
+  if (wrap) wrap.insertBefore(panel, wrap.children[1]);
+}
+
+function guardarKey() {
+  var input = document.getElementById('key-input');
+  if (!input || !input.value.trim()) return;
+  setMobileKey(input.value.trim());
+  var panel = document.getElementById('key-config-panel');
+  if (panel) panel.remove();
+  fetchMarcadores(input.value.trim());
+}
+
+// Botón ⚙️ para cambiar la key
+function toggleConfig() {
+  if (getMobileKey()) {
+    if (confirm('¿Cambiar la API key del móvil?')) {
+      localStorage.removeItem(_KEY_STORAGE);
+      mostrarConfigKey();
+    }
+  } else {
+    mostrarConfigKey();
+  }
+}
+
+function injectarMarcadores(data) {
+  if (!data) return;
+  var historial  = (data.manager || {}).historial || [];
+  var pendientes = historial.filter(function(h){ return h.estado === 'PENDIENTE'; });
+  pendientes.forEach(function(h, i) {
+    var scoreArea = document.getElementById('score-' + i);
+    var cardEl    = document.getElementById('apuesta-' + i);
+    if (!scoreArea) return;
+    var fix = buscarPartidoEnDict(h.partido, getLiveData());
+    if (!fix || fix.homeG === null || fix.homeG === undefined) {
+      scoreArea.innerHTML = '<div class="score-placeholder"><span class="score-clock">&#128336;</span><span class="score-waiting">' + (h.hora_local ? 'Partido a las ' + h.hora_local : 'Sin datos') + '</span></div>';
+      if (cardEl) cardEl.className = 'apuesta';
+      return;
+    }
+    var hG = fix.homeG, aG = fix.awayG;
+    var isEmpate = hG === aG, isFin = fix.finished, isLive = fix.live, isHT = fix.status === 'HT';
+    var resClase = isEmpate ? 'res-empate' : 'res-pierde';
+    var resLabel = isFin ? (isEmpate ? '&#9989; GANADA' : '&#10060; PERDIDA') : (isEmpate ? '&#129309; EMPATE' : '&#10060; NO EMPATE');
+    if (cardEl) cardEl.className = 'apuesta ' + (isFin ? 'finalizada' : (isEmpate ? 'empate-live' : 'en-juego'));
+    var homeClr = isEmpate ? 'num-empate' : (hG > aG ? 'num-verde' : 'num-rojo');
+    var awayClr = isEmpate ? 'num-empate' : (hG > aG ? 'num-rojo' : 'num-verde');
+    var minLabel = isFin ? 'FIN' : (isHT ? 'DESCANSO' : (isLive ? (fix.minuto || '?') + "'" : (fix.status || '--')));
+    var minCls   = isFin ? 'minuto-fin' : (isHT ? 'minuto-ht' : (isLive ? 'minuto-live' : 'minuto-fin'));
+    var partes = (h.partido || '').split(' - ');
+    scoreArea.innerHTML =
+      '<div class="score-live">' +
+        '<div class="score-teams">' +
+          '<div class="score-team" style="text-align:right">' + (partes[0]||fix.home) + '</div>' +
+          '<div class="score-marcador">' +
+            '<div class="score-num ' + homeClr + '">' + hG + '</div>' +
+            '<div class="score-sep">&mdash;</div>' +
+            '<div class="score-num ' + awayClr + '">' + aG + '</div>' +
+          '</div>' +
+          '<div class="score-team" style="text-align:left">' + (partes[1]||fix.away) + '</div>' +
+        '</div>' +
+        '<div class="score-info">' +
+          '<div class="score-minuto ' + minCls + '">' + minLabel + '</div>' +
+          '<div class="score-resultado ' + resClase + '">' + resLabel + '</div>' +
+        '</div>' +
+      '</div>';
+  });
+}
+
+
+function refrescarForzado() {
+  var key = getMobileKey();
+  if (key) fetchMarcadores(key, true);
+  else cargarDatos();
+}
+
+// Ejecutar al cargar
+window.onload = cargarDatos;
+</script>
+</body>
+</html>
